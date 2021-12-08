@@ -350,7 +350,7 @@ public class Server {
         String correctWord = logic.getCurrentWord().toUpperCase();
         System.out.println("\n[GAME]: Round finished. Word: " + correctWord);
 
-        broadcastChatMessage("Round finished. Word was " + correctWord, true, true);
+        broadcastChatMessage("Round finished.\nWord: " + correctWord, true, true);
         broadcastScores();
 
         if (players.size() < GameLogic.MINIMUM_PLAYERS) {

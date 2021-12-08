@@ -9,18 +9,25 @@ import java.awt.Insets;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.Toolkit;
 import java.util.ArrayList;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultCaret;
+import javax.swing.text.DocumentFilter;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
@@ -52,7 +59,7 @@ public class ClientGUI extends JFrame {
         super("Drawlio: Connecting...");
         canvas = new Canvas(pressListener, dragListener);
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-        setSize(new Dimension(900, 500));
+        setSize(new Dimension(1000, 600));
         setResizable(false);
         setLayout(new BorderLayout());
         add(canvas, BorderLayout.CENTER);
@@ -77,16 +84,22 @@ public class ClientGUI extends JFrame {
 
         JPanel chatPanel = new JPanel();
         chatPanel.setLayout(new BoxLayout(chatPanel, BoxLayout.Y_AXIS));
-        chatPanel.setPreferredSize(new Dimension(250, 0));
+        chatPanel.setPreferredSize(new Dimension(300, 0));
+
         chatLog.setEditable(false);
         chatLog.setMargin(new Insets(5, 5, 0, 5));
         chatLog.setFont(font);
-        chatPanel.add(new JScrollPane(chatLog, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+        // Wrap the text pane inside a JPanel to prevent automatic wrapping.
+        JPanel chatLogPane = new JPanel(new BorderLayout());
+        chatLogPane.add(chatLog, BorderLayout.CENTER);
+        chatPanel.add(new JScrollPane(chatLogPane, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
                 ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER));
 
         inputField.setMaximumSize(new Dimension(Short.MAX_VALUE, 50));
         inputField.setFont(font);
         inputField.addActionListener(guessListener);
+        // Sets a 20 character limit on the field.
+        ((AbstractDocument) inputField.getDocument()).setDocumentFilter(new DocumentSizeFilter(20));
         chatPanel.add(inputField);
         add(chatPanel, BorderLayout.LINE_END);
 
@@ -155,9 +168,11 @@ public class ClientGUI extends JFrame {
         StyleConstants.setBold(attributes, bold);
 
         try {
-            document.insertString(document.getLength(), "\n" + message, attributes);
-            // This scrolls the scrollpane to the bottom.
-            chatLog.setCaretPosition(document.getLength());
+            int offset = document.getLength();
+            document.insertString(offset, "\n" + message, attributes);
+            // Set the caret to the beginning of the inserted line to make the panel scroll to
+            // bottom.
+            chatLog.setCaretPosition(offset + 1);
         } catch (BadLocationException e) {
         }
     }
@@ -181,5 +196,39 @@ public class ClientGUI extends JFrame {
                 label.setFont(label.getFont().deriveFont(Font.PLAIN));
             }
         }
+    }
+
+    /**
+     * Filter that sets a character limit on the document, because having JTextField support that
+     * natively would be too convenient.
+     */
+    private class DocumentSizeFilter extends DocumentFilter {
+        private int maxCharacters;
+
+        public DocumentSizeFilter(int maxChars) {
+            maxCharacters = maxChars;
+        }
+
+        @Override
+        public void insertString(FilterBypass filterBypass, int offset, String string,
+                AttributeSet set) throws BadLocationException {
+
+            // This rejects the entire insertion if it would make the contents too long.
+            if ((filterBypass.getDocument().getLength() + string.length()) <= maxCharacters) {
+                super.insertString(filterBypass, offset, string, set);
+            }
+        }
+
+        @Override
+        public void replace(FilterBypass filterBypass, int offset, int length, String string,
+                AttributeSet set) throws BadLocationException {
+
+            // This rejects the entire insertion if it would make the contents too long.
+            if ((filterBypass.getDocument().getLength() + string.length()
+                    - length) <= maxCharacters) {
+                super.replace(filterBypass, offset, length, string, set);
+            }
+        }
+
     }
 }
