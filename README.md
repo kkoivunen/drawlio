@@ -11,10 +11,13 @@ I have only tested with `OpenJDK Temurin-17.0.1+12`.
 This project was made as an exercise in Java network programming and not meant for anyone to actually play. I put bare minimum effort in the visuals/UI and there's likely some bugs.
 
 ## Example
-An example game with four players. _Player 4_ left and _Player 5_ joined and could immediately start making guesses in the middle of the round without issues.
+An example game with four players. In this example __Player 3__(bottom left) is currently drawing, __Player 5__ (bottom right) has guessed the word, and __Player 1__ and __Player 2__ (top left/right) is still guessing.  
+__Player 4__ left and __Player 5__ joined and could immediately start making guesses in the middle of the round without issues.
 ![Example](/example.png)
 
-## Server
+
+## Usage
+### Server
 Listens for new client connections, handles the game state/logic and handles all communication with the clients.
 
 Compile
@@ -26,12 +29,15 @@ Run
 ```
 java -cp bin drawlio.server.ServerLauncher
 ```
+
 Port to listen on can optionally be supplied as an argument (defaults to 50505)
 ```
 java -cp bin drawlio.server.ServerLauncher 12345
 ```
 
-## Client
+### Client
+Connects to a running server as a participating player.
+
 Compile
 ```
 javac -d bin ./src/drawlio/client/*.java
@@ -41,6 +47,7 @@ Run
 ```
 java -cp bin drawlio.client.ClientLauncher
 ```
+
 Server address/domain and port can optionally be supplied as arguments (defaults to 127.0.0.1 and 50505)
 ```
 java -cp bin drawlio.client.ClientLauncher 10.1.2.3 12345
